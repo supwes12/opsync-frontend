@@ -6,7 +6,11 @@ import type {
   Recommendation,
   Alert,
   Shift,
+  ShiftSummary,
   Restaurant,
+  TrendsData,
+  Settings,
+  AuditLog,
 } from '../types'
 
 export const auth = {
@@ -20,6 +24,14 @@ export const dashboard = {
   metrics: (params?: { hours?: number }) =>
     api.get<DashboardMetrics>('/dashboard/metrics', { params }),
   evaluate: () => api.post('/dashboard/evaluate'),
+  trends: (params?: { days?: number; shift_id?: string }) =>
+    api.get<TrendsData>('/dashboard/trends', { params }),
+}
+
+export const settings = {
+  get: () => api.get<{ settings: Settings }>('/settings'),
+  update: (data: Partial<Settings>) =>
+    api.put<{ settings: Settings }>('/settings', data),
 }
 
 export const recommendations = {
@@ -27,15 +39,15 @@ export const recommendations = {
     api.get<{ recommendations: Recommendation[] }>('/recommendations', { params }),
   get: (id: string) =>
     api.get<{ recommendation: Recommendation }>(`/recommendations/${id}`),
-  act: (id: string, action_type: string, notes?: string) =>
-    api.post(`/recommendations/${id}/action`, { action_type, notes }),
+  act: (id: string, response_type: string, notes?: string) =>
+    api.post(`/recommendations/${id}/action`, { response_type, notes }),
 }
 
 export const alerts = {
   list: (params?: { acknowledged?: boolean; severity?: string }) =>
     api.get<{ alerts: Alert[] }>('/alerts', { params }),
   acknowledge: (id: string) =>
-    api.post(`/alerts/${id}/acknowledge`),
+    api.put(`/alerts/${id}/acknowledge`),
 }
 
 export const shifts = {
@@ -45,6 +57,13 @@ export const shifts = {
     api.post<{ shift: Shift }>('/shifts', data),
   update: (id: string, data: Partial<Shift>) =>
     api.put<{ shift: Shift }>(`/shifts/${id}`, data),
+  summary: (id: string) =>
+    api.get<ShiftSummary>(`/shifts/${id}/summary`),
+}
+
+export const audit = {
+  list: (params?: { limit?: number }) =>
+    api.get<{ audit_logs: AuditLog[] }>('/audit', { params }),
 }
 
 export const restaurants = {

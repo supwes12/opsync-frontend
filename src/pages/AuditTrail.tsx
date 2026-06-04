@@ -159,22 +159,27 @@ export default function AuditTrail() {
                   const style = getActionStyle(log.action)
                   return (
                     <tr
-                      key={log.audit_id}
+                      key={log.id}
                       className={`border-b border-gray-100 hover:bg-blue-50/50 transition-colors ${
                         idx % 2 === 1 ? 'bg-gray-50/50' : ''
                       }`}
                     >
                       <td className="px-6 py-4 text-gray-500 whitespace-nowrap text-xs">
-                        {formatDateTime(log.created_at)}
+                        {formatDateTime(log.timestamp)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                            {log.user_email.charAt(0).toUpperCase()}
+                            {(log.user_name ?? log.user_email).charAt(0).toUpperCase()}
                           </div>
-                          <span className="text-gray-700 truncate max-w-[180px]" title={log.user_email}>
-                            {log.user_email}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-gray-700 truncate max-w-[180px] font-medium" title={log.user_name}>
+                              {log.user_name}
+                            </span>
+                            <span className="text-gray-400 truncate max-w-[180px] text-xs" title={log.user_email}>
+                              {log.user_email}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -189,9 +194,13 @@ export default function AuditTrail() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-500 max-w-[300px]">
-                        <span className="truncate block" title={log.details ?? ''}>
-                          {log.details || <span className="text-gray-300">--</span>}
-                        </span>
+                        {log.details ? (
+                          <span className="truncate block" title={JSON.stringify(log.details)}>
+                            {Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(', ')}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">--</span>
+                        )}
                       </td>
                     </tr>
                   )

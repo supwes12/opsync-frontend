@@ -66,12 +66,12 @@ export default function Settings() {
     setError(null)
     settingsApi.get()
       .then((res) => {
-        const s = res.data.settings
+        const s = res.data
         setSettings(s)
-        setQueueSurge(String(s.queue_surge_threshold))
-        setLowInventory(String(s.low_inventory_threshold))
-        setLaborImbalance(String(s.labor_imbalance_threshold))
-        setTicketTimeMax(String(s.ticket_time_max_threshold))
+        setQueueSurge(String(s.queue_surge))
+        setLowInventory(String(s.low_inventory))
+        setLaborImbalance(String(s.labor_imbalance))
+        setTicketTimeMax(String(s.ticket_time_max))
       })
       .catch(() => setError('Failed to load settings.'))
       .finally(() => setLoading(false))
@@ -84,10 +84,10 @@ export default function Settings() {
   const validate = (): boolean => {
     const errs: Record<string, string> = {}
     const fields = [
-      { key: 'queue_surge_threshold', value: queueSurge, label: 'Queue surge threshold' },
-      { key: 'low_inventory_threshold', value: lowInventory, label: 'Low inventory threshold' },
-      { key: 'labor_imbalance_threshold', value: laborImbalance, label: 'Labor imbalance threshold' },
-      { key: 'ticket_time_max_threshold', value: ticketTimeMax, label: 'Ticket time max threshold' },
+      { key: 'queue_surge', value: queueSurge, label: 'Queue surge threshold' },
+      { key: 'low_inventory', value: lowInventory, label: 'Low inventory threshold' },
+      { key: 'labor_imbalance', value: laborImbalance, label: 'Labor imbalance threshold' },
+      { key: 'ticket_time_max', value: ticketTimeMax, label: 'Ticket time max threshold' },
     ]
     for (const f of fields) {
       if (f.value.trim() === '') {
@@ -107,12 +107,12 @@ export default function Settings() {
     setSuccess(null)
     try {
       const res = await settingsApi.update({
-        queue_surge_threshold: Number(queueSurge),
-        low_inventory_threshold: Number(lowInventory),
-        labor_imbalance_threshold: Number(laborImbalance),
-        ticket_time_max_threshold: Number(ticketTimeMax),
+        queue_surge: Number(queueSurge),
+        low_inventory: Number(lowInventory),
+        labor_imbalance: Number(laborImbalance),
+        ticket_time_max: Number(ticketTimeMax),
       })
-      setSettings(res.data.settings)
+      setSettings(res.data)
       setSuccess('Settings saved successfully!')
       setTimeout(() => setSuccess(null), 3000)
     } catch {
@@ -192,7 +192,7 @@ export default function Settings() {
                 description="Trigger alert when queue depth exceeds this value"
                 value={queueSurge}
                 onChange={setQueueSurge}
-                error={validationErrors.queue_surge_threshold}
+                error={validationErrors.queue_surge}
                 unit="orders"
               />
               <ThresholdField
@@ -200,7 +200,7 @@ export default function Settings() {
                 description="Alert when avg ticket time exceeds this (in seconds)"
                 value={ticketTimeMax}
                 onChange={setTicketTimeMax}
-                error={validationErrors.ticket_time_max_threshold}
+                error={validationErrors.ticket_time_max}
                 unit="seconds"
               />
             </div>
@@ -222,7 +222,7 @@ export default function Settings() {
                 description="Trigger alert when staff utilization ratio exceeds or drops below this"
                 value={laborImbalance}
                 onChange={setLaborImbalance}
-                error={validationErrors.labor_imbalance_threshold}
+                error={validationErrors.labor_imbalance}
                 unit="ratio"
               />
             </div>
@@ -244,7 +244,7 @@ export default function Settings() {
                 description="Alert when any inventory item falls below this quantity"
                 value={lowInventory}
                 onChange={setLowInventory}
-                error={validationErrors.low_inventory_threshold}
+                error={validationErrors.low_inventory}
                 unit="units"
               />
             </div>

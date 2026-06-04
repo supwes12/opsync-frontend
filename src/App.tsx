@@ -10,6 +10,7 @@ import Restaurants from './pages/Restaurants'
 import Trends from './pages/Trends'
 import Settings from './pages/Settings'
 import AuditTrail from './pages/AuditTrail'
+import Staff from './pages/Staff'
 
 export default function App() {
   return (
@@ -32,6 +33,14 @@ export default function App() {
           element={
             <ProtectedRoute roles={['admin', 'manager']}>
               <Shifts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute roles={['admin', 'manager']}>
+              <Staff />
             </ProtectedRoute>
           }
         />

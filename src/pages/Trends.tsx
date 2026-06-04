@@ -7,6 +7,7 @@ import type { PieLabelRenderProps } from 'recharts'
 import { dashboard, shifts as shiftsApi } from '../api/endpoints'
 import ErrorState from '../components/ErrorState'
 import type { TrendsData, Shift } from '../types'
+import { useMemo } from 'react'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
@@ -20,14 +21,12 @@ function getHeatmapColor(utilization: number): string {
   return HEATMAP_COLORS[Math.max(0, idx)]
 }
 
-function formatShiftLabel(shift: Shift): string {
-  const type = shift.shift_type.charAt(0).toUpperCase() + shift.shift_type.slice(1)
+function formatDateLabel(dateStr: string): string {
   try {
-    const d = new Date(shift.start_time)
-    const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' })
-    return `${type} - ${dateStr}`
+    const d = new Date(dateStr + 'T00:00:00')
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   } catch {
-    return type
+    return dateStr
   }
 }
 
@@ -36,21 +35,32 @@ export default function Trends() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [days, setDays] = useState(7)
-  const [shiftId, setShiftId] = useState<string>('')
+  const [filterDate, setFilterDate] = useState<string>('')
   const [availableShifts, setAvailableShifts] = useState<Shift[]>([])
 
-  // Fetch available shifts for the dropdown
   useEffect(() => {
     shiftsApi.list()
       .then((res) => setAvailableShifts(res.data.shifts))
-      .catch(() => { /* silent - dropdown just won't populate */ })
+      .catch(() => {})
   }, [])
+
+  const uniqueDates = useMemo(() => {
+    const dateSet = new Set<string>()
+    for (const s of availableShifts) {
+      try {
+        const d = new Date(s.start_time)
+        const iso = d.toISOString().slice(0, 10)
+        dateSet.add(iso)
+      } catch { /* skip */ }
+    }
+    return [...dateSet].sort().reverse()
+  }, [availableShifts])
 
   const fetchData = () => {
     setLoading(true)
     setError(null)
-    const params: { days?: number; shift_id?: string } = { days }
-    if (shiftId) params.shift_id = shiftId
+    const params: { days?: number; date?: string } = { days }
+    if (filterDate) params.date = filterDate
     dashboard.trends(params)
       .then((res) => setData(res.data))
       .catch(() => setError('Failed to load trends data.'))
@@ -59,12 +69,12 @@ export default function Trends() {
 
   useEffect(() => {
     fetchData()
-  }, [days, shiftId])
+  }, [days, filterDate])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     )
   }
@@ -90,16 +100,15 @@ export default function Trends() {
           <p className="text-sm text-gray-500 mt-0.5">Historical performance insights across key operational metrics</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Shift selector dropdown */}
           <select
-            value={shiftId}
-            onChange={(e) => setShiftId(e.target.value)}
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
             className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm min-w-[160px]"
           >
-            <option value="">All Shifts</option>
-            {availableShifts.map((s) => (
-              <option key={s.shift_id} value={s.shift_id}>
-                {formatShiftLabel(s)}
+            <option value="">All Days</option>
+            {uniqueDates.map((d) => (
+              <option key={d} value={d}>
+                {formatDateLabel(d)}
               </option>
             ))}
           </select>
@@ -125,7 +134,7 @@ export default function Trends() {
       {/* Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Order Volume Over Time */}
-        <ChartCard title="Order Volume Over Time" subtitle={`Daily orders, last ${days} days`}>
+        <ChartCard title="Order Volume Over Time" subtitle={filterDate ? `Daily orders around ${formatDateLabel(filterDate)}` : `Daily orders, last ${days} days`}>
           {data?.order_volume_by_day?.length ? (
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={data.order_volume_by_day} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -142,20 +151,20 @@ export default function Trends() {
                   axisLine={{ stroke: '#e5e7eb' }}
                   tickFormatter={(v: string) => {
                     try {
-                      return new Date(v).toLocaleDateString([], { month: 'short', day: 'numeric' })
+                      return new Date(v + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })
                     } catch { return v }
                   }}
                 />
                 <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} axisLine={{ stroke: '#e5e7eb' }} label={{ value: 'Orders', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#9ca3af' } }} />
                 <Tooltip
                   labelFormatter={(label) => {
-                    try { return new Date(String(label)).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) }
+                    try { return new Date(String(label) + 'T00:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) }
                     catch { return String(label) }
                   }}
                   formatter={(value) => [String(value ?? ''), 'Orders']}
                   contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                 />
-                <Area type="monotone" dataKey="orders" stroke="#3b82f6" strokeWidth={2.5} fill="url(#trendsOrderGradient)" dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
+                <Area type="monotone" dataKey="total_orders" stroke="#3b82f6" strokeWidth={2.5} fill="url(#trendsOrderGradient)" dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 5, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           ) : <EmptyChart />}
@@ -190,14 +199,18 @@ export default function Trends() {
           {heatmapDays.length > 0 && heatmapHours.length > 0 ? (
             <div className="px-2 py-4 overflow-x-auto">
               <div className="min-w-[400px]">
-                {/* Hour labels */}
-                <div className="flex items-center mb-1">
+                {/* Hour labels — show every other hour in short AM/PM format */}
+                <div className="flex items-end mb-1.5">
                   <div className="w-16 shrink-0" />
-                  {heatmapHours.map(h => (
-                    <div key={h} className="flex-1 text-center text-[10px] text-gray-400 font-medium">
-                      {h}:00
-                    </div>
-                  ))}
+                  {heatmapHours.map(h => {
+                    const show = h % 2 === 0
+                    const label = h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`
+                    return (
+                      <div key={h} className="flex-1 text-center">
+                        {show && <span className="text-[10px] text-gray-400 font-medium">{label}</span>}
+                      </div>
+                    )
+                  })}
                 </div>
                 {/* Rows */}
                 {heatmapDays.map(day => (
@@ -205,12 +218,13 @@ export default function Trends() {
                     <div className="w-16 shrink-0 text-xs text-gray-500 font-medium pr-2 text-right">{day}</div>
                     {heatmapHours.map(hour => {
                       const util = heatmapMap.get(`${day}-${hour}`) ?? 0
+                      const timeLabel = hour === 0 ? '12:00 AM' : hour < 12 ? `${hour}:00 AM` : hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`
                       return (
                         <div
                           key={hour}
                           className="flex-1 aspect-square mx-0.5 rounded-sm cursor-default transition-transform hover:scale-110"
                           style={{ backgroundColor: getHeatmapColor(util), minHeight: '24px' }}
-                          title={`${day} ${hour}:00 -- ${(util * 100).toFixed(0)}%`}
+                          title={`${day} ${timeLabel} — ${(util * 100).toFixed(0)}%`}
                         />
                       )
                     })}
@@ -245,9 +259,17 @@ export default function Trends() {
                   outerRadius={95}
                   innerRadius={50}
                   paddingAngle={3}
-                  label={(props: PieLabelRenderProps) => {
-                    const entry = props as PieLabelRenderProps & { status?: string }
-                    return `${String(entry.status ?? entry.name ?? '')} ${((Number(props.percent) || 0) * 100).toFixed(0)}%`
+                  label={({ cx, cy, midAngle, outerRadius: or, percent, name, index }: PieLabelRenderProps & { name?: string; index?: number }) => {
+                    const RADIAN = Math.PI / 180
+                    const radius = (Number(or) || 95) + 22
+                    const x = (Number(cx) || 0) + radius * Math.cos(-((Number(midAngle) || 0)) * RADIAN)
+                    const y = (Number(cy) || 0) + radius * Math.sin(-((Number(midAngle) || 0)) * RADIAN)
+                    const color = COLORS[(Number(index) || 0) % COLORS.length]
+                    return (
+                      <text x={x} y={y} textAnchor={x > (Number(cx) || 0) ? 'start' : 'end'} dominantBaseline="central" style={{ fontSize: '12px', fill: color, fontWeight: 600 }}>
+                        {`${name} ${((Number(percent) || 0) * 100).toFixed(0)}%`}
+                      </text>
+                    )
                   }}
                   labelLine={{ strokeWidth: 1, stroke: '#9ca3af' }}
                 >
@@ -310,13 +332,13 @@ function ChartCard({ title, subtitle, children }: { title: string; subtitle?: st
 function EmptyChart() {
   return (
     <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-      <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3">
-        <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+        <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       </div>
-      <p className="text-sm font-medium text-gray-500">No trend data available yet</p>
-      <p className="text-xs text-gray-400 mt-1">Data will appear here once operations begin</p>
+      <p className="text-sm font-medium text-gray-500">No data available</p>
+      <p className="text-xs text-gray-400 mt-1">Data will appear once operations begin</p>
     </div>
   )
 }

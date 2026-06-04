@@ -61,7 +61,7 @@ export default function Shifts() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     )
   }
@@ -77,16 +77,19 @@ export default function Shifts() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Shifts</h1>
-          <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">
-            {shiftList.length}
-          </span>
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">Shifts</h1>
+            <span className="text-xs font-medium bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">
+              {shiftList.length}
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 mt-0.5">Track and manage shift schedules across your restaurant</p>
         </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="border border-gray-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          className="border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
         >
           <option value="all">All</option>
           <option value="active">Active</option>
@@ -112,11 +115,16 @@ export default function Shifts() {
       </div>
 
       {shiftList.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-          <svg className="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm font-medium">No shifts found</p>
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+            <svg className="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-base font-semibold text-gray-600">No shifts found</p>
+          <p className="text-sm text-gray-400 mt-1.5 max-w-xs text-center">
+            Shifts will appear here once they are scheduled or started.
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -140,7 +148,7 @@ export default function Shifts() {
                       shift.status === 'completed'
                         ? 'hover:bg-blue-50/50 cursor-pointer'
                         : 'hover:bg-gray-50/50'
-                    } ${idx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
+                    } ${idx % 2 === 1 ? 'bg-gray-50/50' : ''}`}
                     onClick={() => handleShiftClick(shift)}
                   >
                     <td className="px-6 py-4 font-medium text-gray-900 capitalize">
@@ -246,7 +254,7 @@ function ShiftSummaryModal({
         <div className="p-6">
           {loading && (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
             </div>
           )}
 

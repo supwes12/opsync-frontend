@@ -11,6 +11,7 @@ import type {
   TrendsData,
   Settings,
   AuditLog,
+  StaffMember,
 } from '../types'
 
 export const auth = {
@@ -24,14 +25,14 @@ export const dashboard = {
   metrics: (params?: { hours?: number }) =>
     api.get<DashboardMetrics>('/dashboard/metrics', { params }),
   evaluate: () => api.post('/dashboard/evaluate'),
-  trends: (params?: { days?: number; shift_id?: string }) =>
+  trends: (params?: { days?: number; shift_id?: string; date?: string }) =>
     api.get<TrendsData>('/dashboard/trends', { params }),
 }
 
 export const settings = {
-  get: () => api.get<{ settings: Settings }>('/settings'),
+  get: () => api.get<Settings>('/settings'),
   update: (data: Partial<Settings>) =>
-    api.put<{ settings: Settings }>('/settings', data),
+    api.put<Settings>('/settings', data),
 }
 
 export const recommendations = {
@@ -64,6 +65,10 @@ export const shifts = {
 export const audit = {
   list: (params?: { limit?: number }) =>
     api.get<{ audit_logs: AuditLog[] }>('/audit', { params }),
+}
+
+export const staff = {
+  list: () => api.get<{ staff: StaffMember[] }>('/staff'),
 }
 
 export const restaurants = {

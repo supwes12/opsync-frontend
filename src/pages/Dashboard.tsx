@@ -206,7 +206,9 @@ export default function Dashboard() {
           }
         />
         {/* Demand Forecast Card */}
-        <ForecastCard forecast={forecast} />
+        <div className="sm:col-span-2 lg:col-span-1">
+          <ForecastCard forecast={forecast} />
+        </div>
       </div>
 
       {/* Charts */}
@@ -250,7 +252,18 @@ export default function Dashboard() {
                   outerRadius={90}
                   innerRadius={45}
                   paddingAngle={3}
-                  label={(props: PieLabelRenderProps) => `${String((props as PieLabelRenderProps & { channel?: string }).channel ?? props.name ?? '')} ${((Number(props.percent) || 0) * 100).toFixed(0)}%`}
+                  label={({ cx, cy, midAngle, outerRadius: or, percent, name, index }: PieLabelRenderProps & { name?: string; index?: number }) => {
+                    const RADIAN = Math.PI / 180
+                    const radius = (Number(or) || 90) + 20
+                    const x = (Number(cx) || 0) + radius * Math.cos(-((Number(midAngle) || 0)) * RADIAN)
+                    const y = (Number(cy) || 0) + radius * Math.sin(-((Number(midAngle) || 0)) * RADIAN)
+                    const color = COLORS[(Number(index) || 0) % COLORS.length]
+                    return (
+                      <text x={x} y={y} textAnchor={x > (Number(cx) || 0) ? 'start' : 'end'} dominantBaseline="central" style={{ fontSize: '12px', fill: color, fontWeight: 600 }}>
+                        {`${name} ${((Number(percent) || 0) * 100).toFixed(0)}%`}
+                      </text>
+                    )
+                  }}
                   labelLine={{ strokeWidth: 1, stroke: '#9ca3af' }}
                 >
                   {metrics.channel_breakdown.map((_, i) => (
@@ -530,10 +543,13 @@ function SeverityBadge({ severity }: { severity: string }) {
 function EmptyChart() {
   return (
     <div className="flex flex-col items-center justify-center h-[280px] text-gray-400">
-      <svg className="w-10 h-10 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-      <p className="text-sm">No data available</p>
+      <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+        <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      </div>
+      <p className="text-sm font-medium text-gray-500">No data available</p>
+      <p className="text-xs text-gray-400 mt-1">Data will appear once operations begin</p>
     </div>
   )
 }
@@ -557,8 +573,9 @@ function ForecastCard({ forecast }: { forecast: ForecastData | null }) {
     )
   }
 
-  const confidenceColor = forecast.confidence >= 0.8 ? 'text-green-600' : forecast.confidence >= 0.6 ? 'text-yellow-600' : 'text-red-600'
-  const confidenceBg = forecast.confidence >= 0.8 ? 'bg-green-100' : forecast.confidence >= 0.6 ? 'bg-yellow-100' : 'bg-red-100'
+  const confidence = typeof forecast.confidence === 'number' && !isNaN(forecast.confidence) ? forecast.confidence : null
+  const confidenceColor = confidence !== null && confidence >= 0.8 ? 'text-green-600' : confidence !== null && confidence >= 0.6 ? 'text-yellow-600' : 'text-red-600'
+  const confidenceBg = confidence !== null && confidence >= 0.8 ? 'bg-green-100' : confidence !== null && confidence >= 0.6 ? 'bg-yellow-100' : 'bg-red-100'
 
   return (
     <div className="relative bg-gradient-to-br from-indigo-50 to-white border border-indigo-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 min-h-[120px] overflow-hidden">
@@ -580,7 +597,7 @@ function ForecastCard({ forecast }: { forecast: ForecastData | null }) {
             </div>
             <div className="text-gray-300">|</div>
             <div className="flex items-center gap-1">
-              <span className="text-xl font-bold text-indigo-500">{forecast.predicted_orders_60min}</span>
+              <span className="text-2xl font-bold text-indigo-500">{forecast.predicted_orders_60min}</span>
               <span className="text-xs text-gray-400">60m</span>
             </div>
           </div>
@@ -588,7 +605,7 @@ function ForecastCard({ forecast }: { forecast: ForecastData | null }) {
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
             </svg>
-            {(forecast.confidence * 100).toFixed(0)}% confidence
+            {confidence !== null ? `${(confidence * 100).toFixed(0)}%` : '--'} confidence
           </div>
         </div>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-100 text-indigo-600">

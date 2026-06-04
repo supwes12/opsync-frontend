@@ -103,7 +103,7 @@ export interface DashboardMetrics {
 }
 
 export interface TrendsData {
-  order_volume_by_day: { date: string; orders: number }[]
+  order_volume_by_day: { date: string; total_orders: number }[]
   ticket_time_distribution: { bucket: string; count: number }[]
   staff_utilization_heatmap: { hour: number; day: string; utilization: number }[]
   recommendation_acceptance_rate: { status: string; count: number }[]
@@ -111,12 +111,13 @@ export interface TrendsData {
 }
 
 export interface Settings {
-  id: string
+  settings_id: string
   restaurant_id: string
-  queue_surge_threshold: number
-  low_inventory_threshold: number
-  labor_imbalance_threshold: number
-  ticket_time_max_threshold: number
+  queue_surge: number
+  low_inventory: number
+  labor_imbalance: number
+  ticket_time_max: number
+  updated_at: string
 }
 
 export interface ForecastData {
@@ -126,14 +127,15 @@ export interface ForecastData {
 }
 
 export interface AuditLog {
-  audit_id: string
+  id: string
   user_id: string
   user_email: string
+  user_name: string
   action: string
   object_type: string
-  object_id: string
-  details: string | null
-  created_at: string
+  object_id: string | null
+  details: Record<string, unknown> | null
+  timestamp: string
 }
 
 export interface ShiftSummary {
@@ -151,6 +153,35 @@ export interface ShiftSummary {
   recommendations_rejected: number
   alerts_triggered: number
   alerts_acknowledged: number
+}
+
+export interface StaffScheduleEntry {
+  date: string
+  shift_type: string | null
+  start_time: string | null
+  end_time: string | null
+  status: string
+  hours: number
+}
+
+export interface StaffStats {
+  days_worked_this_week: number
+  hours_this_week: number
+  days_worked_this_month: number
+  hours_this_month: number
+}
+
+export interface StaffMember {
+  staff_id: string
+  first_name: string
+  last_name: string
+  position: string
+  phone: string | null
+  email: string | null
+  hire_date: string
+  status: string
+  schedule: StaffScheduleEntry[]
+  stats: StaffStats
 }
 
 export interface AuthResponse {
